@@ -37,9 +37,38 @@ def main():
 		sum += score
 	target = sum/10000.0
 	test_group=random.sample(chemical_dict.keys(),50)
-	cyp=['1a1','1a2','1b1','2a6','2b6','2c8','2c9','2c19','2d6','2e1','3a4']
+	cyp={'1a1':[],'1a2':[],'1b1':[],'2a6':[],'2b6':[],'2c8':[],'2c9':[],'2c19':[],'2d6':[],'2e1':[],'3a4':[]}
+	temp=cyp.keys()
 	for unit in chemical_dict:
-		if unit in test_group:pass
+		if unit in test_group:continue
+		for i in range(11):
+			if chemical_dict[unit]['Test'][i]=='1':cyp[temp[i]].append(unit)
+	cal_result={'1a1':[],'1a2':[],'1b1':[],'2a6':[],'2b6':[],'2c8':[],'2c9':[],'2c19':[],'2d6':[],'2e1':[],'3a4':[]}
+	for member in cyp:
+		size=len(cyp[member])
+		for x in test_group:
+			dis_sum=0
+			value_x=chemical_dict[x]['Prop']
+			for y in cyp[member]:
+				value_y=chemical_dict[y]['Prop']
+				dis_value=dis_cal(value_x,value_y)
+				dis_sum+=dis_value
+			mean_value=dis_sum/size
+			if mean_value<=target:
+				cal_result[member].append(x)
+	real_result={'1a1':[],'1a2':[],'1b1':[],'2a6':[],'2b6':[],'2c8':[],'2c9':[],'2c19':[],'2d6':[],'2e1':[],'3a4':[]}
+	for test in test_group:
+		for i in range(11):
+			if chemical_dict[test]['Test'][i]=='1':	real_result[temp[i]].append(test)
+	final_sum=0
+	for z in real_result:
+		num=len(set(real_result[z]) & set(cal_result[z]))
+		final_sum+=num
+	total=0
+	for z in real_result:
+		total+=len(real_result[z])
+	print final_sum,total
+
 
 
 
