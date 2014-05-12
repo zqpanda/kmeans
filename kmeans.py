@@ -44,6 +44,10 @@ def main():
 		for i in range(11):
 			if chemical_dict[unit]['Test'][i]=='1':cyp[temp[i]].append(unit)
 	cal_result={'1a1':[],'1a2':[],'1b1':[],'2a6':[],'2b6':[],'2c8':[],'2c9':[],'2c19':[],'2d6':[],'2e1':[],'3a4':[]}
+	tp=预测为真，实际也为真
+	fn=预测为假，实际为真
+	fp=预测为真，实际为假
+	tn=预测为假，实际也为假
 	for member in cyp:
 		size=len(cyp[member])
 		for x in test_group:
