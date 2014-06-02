@@ -5,6 +5,8 @@ def main():
 	content=fread.readlines()
 	fout=open('1A1','w')
 	num=0
+	true_group=list()
+	false_group=list()
 	for line in content:
 		line=line.strip()
 		units=line.split('\t')
@@ -13,11 +15,22 @@ def main():
 		data_set=units[13:]
 		tmp=[]
 		for x in range(len(data_set)):
-			tmp.append(str(x))
+			tmp.append('vector'+str(x))
 		if num==0:
 			fout.write('class'+','+','.join(tmp)+'\n')
+		if class_set[0]=='1':
+			true_group.append(class_set[1]+','+','.join(data_set))
 		else:
-			fout.write(class_set[0]+','+','.join(data_set)+'\n')
+			false_group.append(class_set[1]+','+','.join(data_set))
+		num+=1
+	num=0
+	for line in true_group:
+		fout.write(line+'\n')
+		num+=1
+
+	for line in false_group:
+		if num==600:break
+		fout.write(line+'\n')
 		num+=1
 	fout.close()
 	fread.close()
