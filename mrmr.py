@@ -3,7 +3,7 @@
 def main():
 	fread=open('yuxi','r')
 	content=fread.readlines()
-	fout=open('1A1','w')
+	fout=open('3A4','w')
 	num=0
 	true_group=list()
 	false_group=list()
@@ -18,10 +18,10 @@ def main():
 			tmp.append('vector'+str(x))
 		if num==0:
 			fout.write('class'+','+','.join(tmp)+'\n')
-		if class_set[0]=='1':
-			true_group.append(class_set[1]+','+','.join(data_set))
+		if class_set[10]=='1':
+			true_group.append(class_set[10]+','+','.join(data_set))
 		else:
-			false_group.append(class_set[1]+','+','.join(data_set))
+			false_group.append(class_set[10]+','+','.join(data_set))
 		num+=1
 	num=0
 	for line in true_group:
