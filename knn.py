@@ -32,7 +32,7 @@ def vectors(family):
 	'''
 	读取mrmr特征筛选结果
 	'''
-	vector_path='../kmeans/'+family.upper()+'_vector'
+	vector_path='./'+family+'_top50'
 	fread=open(vector_path,'r')
 	content=fread.readlines()
 	vector_index=list()
@@ -44,6 +44,9 @@ def vectors(family):
 
 
 def chemDict(filepath):
+	'''
+	小分子属性信息获取
+	'''
 	fread = open(filepath,'r')
 	content = fread.readlines()
 	id_list = list()
@@ -90,6 +93,9 @@ def classify(newInput,dataSet,labels,k):
 		return round(1 - float(maxCount)/float(k),2)
 
 def analysis(real,predict):
+	'''
+	结果分析，对比预测结果和真实结果，返回roc所需数据
+	'''
 	diff = list(np.array(predict) - np.array(real))
 	pre_p = predict.count(1)
 	pre_n = predict.count(0)
@@ -100,6 +106,9 @@ def analysis(real,predict):
 	return float(fp_num)/float(fp_num+tn_num),float(tp_num)/float(tp_num+fn_num)
 
 def normalize(chem_dict):
+	'''
+	均一化处理
+	'''
 	temp_list=[]
 	for (name,prop) in chem_dict.items():
 		temp_list.append(prop['Prop'])
@@ -117,6 +126,9 @@ def normalize(chem_dict):
 	return normalized_dict
 
 def mrmr_format(chem_dict,cyp_family):
+	'''
+	mrmr数据格式化
+	'''
 	title = 'class'+','+','.join(['vector' + str(num) for num in range(498)])
 	for cyp in cyp_family:
 		fout=open('./'+cyp,'w')
@@ -139,6 +151,21 @@ def mrmr_format(chem_dict,cyp_family):
 		fout.close()
 		
 
+def training_group(test_id,chem_dict,cyp):
+	cyp_family = ['1a1','1a2','1b1','2a6','2b6','2c8','2c9','2c19','2d6','2e1','3a4']
+	positive_group = list()
+	nagative_group = list()
+	if_positive = chem_dict[test_id]['Result'][cyp_family.index(cyp)]
+	for key,value in chem_dict.items():
+		if key==test_id:
+			continue
+		if value['Result'][cyp_family.index(cyp)] == '1':
+			positive_group.append(key)
+		else:
+			nagative_group.append(key)
+	nagative_group = random.sample(nagative_group,len(positive_group))
+	positive_group.extend(nagative_group)
+	return positive_group
 
 def main():
 	'''
@@ -158,33 +185,64 @@ def main():
 			trainningX.write(x+'\n')
 	testX.close()
 	trainningX.close()
-	'''
+	
+	#mrmr格式化处理
 	mrmr_format(normalize(chem_dict),cyp_family)
 	'''
-	cyp_family = ['1a1','1a2','1b1','2a6','2b6','2c8','2c9','2c19','2d6','2e1','3a4']
-#	cyp_roc = dict()
-	for member in cyp_family:
-		fout=open(member,'w')
-		roc_data = list()
-		dataSet,labels=createDataSet('./train',chem_dict,member)
-		testSet,test_labels=createDataSet('./test',chem_dict,member)
-		for k in range(1,21):
+	#chosen_cyp = sys.argv[1]
+	chosen_cyp = '1a1'
+	for key,value in normalize(chem_dict).items():
+		trainningX = training_group(key,normalize(chem_dict),chosen_cyp)
+		for k in range(3,10):
+			auc_data = list()
+			raw_data = list()
 			for step in np.arange(0.01,1,0.01):
-				predict_result = list()
-				for sample in testSet:
-					score=classify(sample,dataSet,labels,k)
-					if score>=step:
-						predict_result.append('1')
-					else:
-						predict_result.append('0')
-					fpr,tpr = analysis(test_labels,predict_result)
-					fout.write(str(fpr)+'\t'+str(tpr)+'\n')
-				fout.write(str(step)+'************************'+'\n')
-			fout.write('K='+str(k)+'\n')
-		fout.close()
-#		cyp_roc[member]=roc_data
-#	print cyp_roc
+				
+		
+	dataSet,labels = createDataSet('./train',normalize(chem_dict),chosen_cyp)
+	testSet,test_labels = createDataSet('./test',normalize(chem_dict),chosen_cyp)
+	k_select = dict()
+	k_roc = dict()
+	for k in range(3,100):
+		auc_data = list()
+		raw_data = list()
+		for step in np.arange(0.01,1,0.01):
+			predict_result = list()
+			for sample in testSet:
+				score = classify(sample,dataSet,labels,k)
+				if score>=step:predict_result.append(1)
+				else:predict_result.append(0)
+			fpr,tpr = analysis(test_labels,predict_result)
+			raw_data.append((fpr,tpr))
+			if (fpr,tpr) not in auc_data:
+				auc_data.append((fpr,tpr))
+		auc_data.reverse()
+	
+		'''
+		AUC线下面积计算
+		'''
+
+		auc = 0
+		for i in range(len(auc_data)-1):
+			point_a = auc_data[i]
+			point_b = auc_data[i+1]
+			if point_a[1] ==  point_b[1]:
+				area = point_a[1] * (point_b[0] - point_a[0])
+			else:
+				area = (point_a[1] + point_b[1])*(point_b[0] - point_a[0])/2.0
+			auc += area
+		k_select[k] = auc
+		k_roc[k] = raw_data
 	'''
+	筛选auc最大的k值
+	'''
+	k_sorted = sorted(k_select.items(),lambda x,y:cmp(x[1],y[1]),reverse=True)
+	k_chosen = k_sorted[0]
+	print k_chosen
+	for item in k_roc[k_chosen[0]]:
+		print item[0],'\t',item[1]
+		
+	
 
 if __name__ == '__main__':
 	main()
